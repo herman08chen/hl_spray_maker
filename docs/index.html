@@ -1,0 +1,27 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GoldSrc Spray Maker</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main>
+    <h1>GoldSrc Spray Maker</h1>
+    <p>Convert an image into a WAD file for GoldSrc games.</p>
+
+    <label for="image">Choose an image</label>
+    <input id="image" type="file" accept="image/png,image/jpeg,image/webp">
+
+    <img id="preview" alt="Image preview" hidden>
+
+    <button id="generate" disabled>Generate WAD</button>
+    <a id="download" hidden>Download tempdecal.wad</a>
+    <p id="status" role="status">Loading converter…</p>
+</main>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+/home/herman/CLionProjects/hl_spray_maker/build-wasm/CMakeFiles/spray_maker.dir
+/home/herman/CLionProjects/hl_spray_maker/build-wasm/CMakeFiles/edit_cache.dir
+/home/herman/CLionProjects/hl_spray_maker/build-wasm/CMakeFiles/rebuild_cache.dir
