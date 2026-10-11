@@ -1,0 +1,24 @@
+# Build output
+/build/
+/cmake-build-*/
+/out/
+/test_images/
+
+# CLion personal settings
+/.idea/workspace.xml
+/.idea/tasks.xml
+
+# Compiled files
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+
+# Debugging artifacts
+core
+core.*
+
+# OS files
+.DS_Store
+Thumbs.db
