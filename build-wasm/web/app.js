@@ -9,6 +9,7 @@ const status = document.querySelector("#status");
 let moduleInstance;
 let selectedFile;
 let downloadUrl;
+let previewUrl;
 
 function getMemoryBuffer() {
     const memory =
@@ -60,6 +61,10 @@ imageInput.addEventListener("change", () => {
         URL.revokeObjectURL(downloadUrl);
         downloadUrl = undefined;
     }
+    if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        previewUrl = undefined;
+    }
 
     if (!selectedFile) {
         preview.hidden = true;
@@ -67,7 +72,8 @@ imageInput.addEventListener("change", () => {
         return;
     }
 
-    preview.src = URL.createObjectURL(selectedFile);
+    previewUrl = URL.createObjectURL(selectedFile);
+    preview.src = previewUrl;
     preview.hidden = false;
     generateButton.disabled = !moduleInstance;
     status.textContent = `Selected: ${selectedFile.name}`;
@@ -154,5 +160,8 @@ generateButton.addEventListener("click", async () => {
 window.addEventListener("beforeunload", () => {
     if (downloadUrl) {
         URL.revokeObjectURL(downloadUrl);
+    }
+    if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
     }
 });

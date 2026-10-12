@@ -4,9 +4,9 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <limits>
 #include <memory>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -15,6 +15,7 @@ namespace {
 constexpr std::uint8_t transparent_index = 255;
 constexpr std::uint8_t alpha_threshold = 128;
 constexpr std::size_t rgba_channels = 4;
+constexpr std::int64_t resolution_area_limit = 12288;
 constexpr std::size_t rgb_channels = 3;
 constexpr std::size_t wad_palette_size = 256;
 constexpr std::size_t opaque_palette_size = 255;
@@ -238,41 +239,97 @@ std::array<std::uint8_t, wad_palette_size * 3> serializePalette(const wad_palett
     return bytes;
 }
 
-std::pair<int, int> fittedDimensions(const image_t& image) {
+struct resolution_row { int height; std::span<const int> widths; };
+constexpr std::array widths_16{
+    16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 200, 224, 240, 256
+};
+constexpr std::array widths_32{
+    16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 200, 224, 240, 256
+};
+constexpr std::array widths_48{
+    16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 200, 224, 240
+};
+constexpr std::array widths_64{16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176};
+constexpr std::array widths_80{16, 32, 48, 64, 80, 96, 112, 128, 144};
+constexpr std::array widths_96{16, 32, 48, 64, 80, 96, 112};
+constexpr std::array widths_112{16, 32, 48, 64, 80, 96};
+constexpr std::array widths_128{16, 32, 48, 64, 80};
+constexpr std::array widths_144{16, 32, 48, 64, 80};
+constexpr std::array widths_160{16, 32, 48, 64};
+constexpr std::array widths_176{16, 32, 48, 64};
+constexpr std::array widths_192{16, 32, 48};
+constexpr std::array widths_200{16, 32, 48};
+constexpr std::array widths_224{16, 32, 48};
+constexpr std::array widths_240{16, 32, 48};
+constexpr std::array widths_256{16, 32};
+constexpr std::array resolution_rows{
+    resolution_row{16, widths_16}, resolution_row{32, widths_32}, resolution_row{48, widths_48},
+    resolution_row{64, widths_64}, resolution_row{80, widths_80}, resolution_row{96, widths_96},
+    resolution_row{112, widths_112}, resolution_row{128, widths_128}, resolution_row{144, widths_144},
+    resolution_row{160, widths_160}, resolution_row{176, widths_176}, resolution_row{192, widths_192},
+    resolution_row{200, widths_200}, resolution_row{224, widths_224}, resolution_row{240, widths_240},
+    resolution_row{256, widths_256}
+};
+constexpr std::size_t resolution_count = [] {
+    std::size_t count = 0;
+    for (const auto& row : resolution_rows) count += row.widths.size();
+    return count;
+}();
+constexpr auto all_resolutions = [] {
+    std::array<std::pair<int, int>, resolution_count> resolutions{};
+    std::size_t index = 0;
+    for (const auto& row : resolution_rows)
+        for (const int width : row.widths)
+            resolutions[index++] = {width, row.height};
+    return resolutions;
+}();
+
+std::pair<int, int> chooseDimensions(const image_t& image, spray_format format) {
     const auto pixels = checkedPixelCount(image.width, image.height);
     if (image.pixels.size() != pixels * rgba_channels) {
         throw std::invalid_argument("Image has invalid RGBA data");
     }
 
-    constexpr double max_dimension = 128.0;
-    constexpr double max_area = 14336.0;
-    constexpr int alignment = 16;
-    const auto width = static_cast<double>(image.width);
-    const auto height = static_cast<double>(image.height);
-    const double scale = std::min({
-        1.0,
-        max_dimension / std::max(width, height),
-        std::sqrt(max_area / (width * height))
-    });
+    const auto candidates = supportedResolutions(format);
+    if (candidates.empty()) throw std::invalid_argument("No resolutions for requested spray format");
 
-    const auto alignedSize = [scale, alignment](int size) {
-        const int scaled = static_cast<int>(static_cast<double>(size) * scale);
-        return std::max(alignment, (scaled / alignment) * alignment);
-    };
-
-    int fitted_width = alignedSize(image.width);
-    int fitted_height = alignedSize(image.height);
-    while (static_cast<std::int64_t>(fitted_width) * fitted_height >
-           static_cast<std::int64_t>(max_area)) {
-        if (fitted_width >= fitted_height && fitted_width > alignment) {
-            fitted_width -= alignment;
-        } else if (fitted_height > alignment) {
-            fitted_height -= alignment;
-        } else {
-            break;
+    std::pair<int, int> best{};
+    std::int64_t best_scale_numerator = 0;
+    std::int64_t best_scale_denominator = 1;
+    std::int64_t best_area = std::numeric_limits<std::int64_t>::max();
+    for (const auto& [candidate_width, candidate_height] : candidates) {
+        const auto area = static_cast<std::int64_t>(candidate_width) * candidate_height;
+        if (area >= resolution_area_limit) continue;
+        std::int64_t scale_numerator = 1;
+        std::int64_t scale_denominator = 1;
+        if (candidate_width < image.width || candidate_height < image.height) {
+            const auto width_limited = static_cast<std::int64_t>(candidate_width) * image.height <=
+                                       static_cast<std::int64_t>(candidate_height) * image.width;
+            if (width_limited) {
+                scale_numerator = candidate_width;
+                scale_denominator = image.width;
+            } else {
+                scale_numerator = candidate_height;
+                scale_denominator = image.height;
+            }
+        }
+        const auto scale_comparison = scale_numerator * best_scale_denominator -
+                                      best_scale_numerator * scale_denominator;
+        // Equal scale means equal image detail. Prefer greater occupancy, then width/height order.
+        if (scale_comparison > 0 ||
+            (scale_comparison == 0 && area < best_area) ||
+            (scale_comparison == 0 && area == best_area &&
+             std::pair{candidate_width, candidate_height} < best)) {
+            best = {candidate_width, candidate_height};
+            best_scale_numerator = scale_numerator;
+            best_scale_denominator = scale_denominator;
+            best_area = area;
         }
     }
-    return {fitted_width, fitted_height};
+    if (best_scale_numerator == 0) {
+        throw std::runtime_error("No valid resolution for requested spray format");
+    }
+    return best;
 }
 
 std::uint32_t toU32(std::size_t value) {
@@ -358,8 +415,17 @@ std::string wrapInWad3(const std::string& lump) {
 }
 }
 
+std::span<const std::pair<int, int>> supportedResolutions(const spray_format format) {
+    if (format != spray_format::alphatest && format != spray_format::indexalpha) return {};
+    return all_resolutions;
+}
+
+std::pair<int, int> fittedDimensions(const image_t& image, const spray_format format) {
+    return chooseDimensions(image, format);
+}
+
 wad_t::wad_t(const image_t& image) {
-    const auto [fitted_width, fitted_height] = fittedDimensions(image);
+    const auto [fitted_width, fitted_height] = fittedDimensions(image, spray_format::alphatest);
     std::copy_n(texture_name, sizeof(texture_name) - 1, name.begin());
     width = static_cast<std::uint32_t>(fitted_width);
     height = static_cast<std::uint32_t>(fitted_height);

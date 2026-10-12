@@ -6,7 +6,10 @@ project(hl_spray_maker
         LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 26)
+include(CTest)
+
+# The project uses C++23 facilities (including std::print); no C++26 feature is required.
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -87,11 +90,8 @@ else()
             "${LIQ_INCLUDE_DIR}"
     )
 
-    find_package(Threads REQUIRED)
-
     target_link_libraries(hl_spray_maker PRIVATE
             imagequant
-            Threads::Threads
             ${CMAKE_DL_LIBS}
     )
 
@@ -113,6 +113,23 @@ else()
                 -Wdouble-promotion
                 -Wimplicit-fallthrough
         )
+    endif()
+
+    if(BUILD_TESTING)
+        add_executable(resolution_tests resolution_tests.cpp image.cpp wad.cpp)
+        target_include_directories(resolution_tests SYSTEM PRIVATE "${LIQ_INCLUDE_DIR}")
+        target_link_libraries(resolution_tests PRIVATE imagequant ${CMAKE_DL_LIBS})
+        if(UNIX)
+            target_link_libraries(resolution_tests PRIVATE m)
+        endif()
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(resolution_tests PRIVATE
+                    -Wall -Wextra -Wpedantic -Werror -Wshadow -Wconversion
+                    -Wsign-conversion -Wformat=2 -Wnull-dereference
+                    -Wdouble-promotion -Wimplicit-fallthrough
+            )
+        endif()
+        add_test(NAME resolution_tests COMMAND resolution_tests)
     endif()
 endif()
 

@@ -2,22 +2,35 @@
 #include "wad.h"
 
 #include <emscripten/emscripten.h>
+#include <emscripten/heap.h>
 
+#include <array>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <limits>
 #include <span>
 #include <string>
-#include <emscripten/emscripten.h>
 
 EM_JS(void, expose_wasm_memory_js, (), {
     Module["wasmMemory"] = wasmMemory;
 });
 
 namespace {
-std::string last_error;
+std::array<char, 512> last_error{};
+
+void setLastError(const char* message) noexcept {
+    std::snprintf(last_error.data(), last_error.size(), "%s", message ? message : "Unknown error.");
+}
+
+bool isValidHeapRange(const void* pointer, const std::size_t size, const std::size_t alignment = 1) {
+    if (pointer == nullptr) return false;
+    const auto address = reinterpret_cast<std::uintptr_t>(pointer);
+    const auto heap_size = emscripten_get_heap_size();
+    return address % alignment == 0 && address <= heap_size && size <= heap_size - address;
+}
 }
 
 extern "C" {
@@ -32,15 +45,16 @@ std::uint8_t* create_wad(
     std::uint32_t encoded_size,
     std::uint32_t* output_size
 ) {
-    if (output_size == nullptr) {
+    if (!isValidHeapRange(output_size, sizeof(*output_size), alignof(std::uint32_t))) {
+        setLastError("Invalid output-size pointer.");
         return nullptr;
     }
 
     *output_size = 0;
-    last_error.clear();
+    setLastError("");
 
     try {
-        if (encoded_image == nullptr || encoded_size == 0) {
+        if (encoded_size == 0 || !isValidHeapRange(encoded_image, encoded_size)) {
             throw std::invalid_argument("Please select a valid image.");
         }
 
@@ -69,9 +83,9 @@ std::uint8_t* create_wad(
         *output_size = static_cast<std::uint32_t>(wad.size());
         return output;
     } catch (const std::exception& error) {
-        last_error = error.what();
+        setLastError(error.what());
     } catch (...) {
-        last_error = "An unknown error occurred.";
+        setLastError("An unknown error occurred.");
     }
 
     return nullptr;
@@ -79,7 +93,7 @@ std::uint8_t* create_wad(
 
 EMSCRIPTEN_KEEPALIVE
 const char* wad_last_error() {
-    return last_error.c_str();
+    return last_error.data();
 }
 
 EMSCRIPTEN_KEEPALIVE

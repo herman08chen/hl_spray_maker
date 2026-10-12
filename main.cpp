@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <iterator>
+#include <limits>
 #include <print>
 #include <span>
 #include <stdexcept>
@@ -20,14 +20,28 @@ std::vector<char> readFile(const fs::path& path) {
         throw std::runtime_error("Could not open input image: " + path.string());
     }
 
-    std::vector<char> contents((std::istreambuf_iterator<char>(input)), {});
-    if (input.bad()) {
+    input.seekg(0, std::ios::end);
+    const auto end = input.tellg();
+    if (end < 0 || static_cast<std::uintmax_t>(end) >
+        static_cast<std::uintmax_t>(std::numeric_limits<int>::max())) {
+        throw std::length_error("Input image is too large: " + path.string());
+    }
+
+    std::vector<char> contents(static_cast<std::size_t>(end));
+    input.seekg(0, std::ios::beg);
+    if (!contents.empty()) {
+        input.read(contents.data(), static_cast<std::streamsize>(contents.size()));
+    }
+    if (!input || input.gcount() != static_cast<std::streamsize>(contents.size())) {
         throw std::runtime_error("Failed while reading input image: " + path.string());
     }
     return contents;
 }
 
 void writeFile(const fs::path& path, const std::string& contents) {
+    if (contents.size() > static_cast<std::size_t>(std::numeric_limits<std::streamsize>::max())) {
+        throw std::length_error("Output WAD is too large to write: " + path.string());
+    }
     std::ofstream output(path, std::ios::binary);
     if (!output) {
         throw std::runtime_error("Could not open output WAD for writing: " + path.string());
@@ -58,15 +72,16 @@ int convertDirectory(const fs::path& directory) {
     std::size_t converted = 0;
     std::size_t failed = 0;
     for (const auto& entry : fs::directory_iterator(directory)) {
-        if (!entry.is_regular_file()) continue;
-
-        const fs::path outputDirectory = directory / (entry.path().filename().string() + "_wad");
         try {
-            const std::string wadData = createWadFromFile(entry.path());
+            if (!entry.is_regular_file()) continue;
+            const auto input_path = entry.path();
+            // Keep one stable output directory per image, independent of its extension.
+            const fs::path outputDirectory = directory / (input_path.stem().string() + "_wad");
+            const std::string wadData = createWadFromFile(input_path);
             fs::create_directories(outputDirectory);
             const fs::path outputPath = outputDirectory / "tempdecal.wad";
             writeFile(outputPath, wadData);
-            std::println("Converted {} -> {}", entry.path().string(), outputPath.string());
+            std::println("Converted {} -> {}", input_path.string(), outputPath.string());
             ++converted;
         } catch (const std::exception& e) {
             std::cerr << "Failed to convert " << entry.path() << ": " << e.what() << '\n';

@@ -5,8 +5,16 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
+#include <utility>
 #include <vector>
+
+enum class spray_format { alphatest, indexalpha };
+
+// Dimensions are returned as (width, height), in pixels.
+[[nodiscard]] std::span<const std::pair<int, int>> supportedResolutions(spray_format format);
+[[nodiscard]] std::pair<int, int> fittedDimensions(const image_t& image, spray_format format);
 
 // Builds a WAD3 file containing one GoldSrc miptexture suitable for a spray.
 class wad_t {

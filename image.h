@@ -16,6 +16,7 @@ struct color_t {
 
 class image_t {
 public:
+    image_t() = default;
     int width = 0;
     int height = 0;
 
