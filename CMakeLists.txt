@@ -38,6 +38,7 @@ if(EMSCRIPTEN)
     target_link_libraries(spray_maker PRIVATE imagequant)
 
     target_compile_options(spray_maker PRIVATE
+            -fexceptions
             -Wall
             -Wextra
             -Wpedantic
@@ -49,6 +50,7 @@ if(EMSCRIPTEN)
     )
 
     target_link_options(spray_maker PRIVATE
+            -fexceptions
             --no-entry
             "-sMODULARIZE=1"
             "-sEXPORT_ES6=1"
@@ -66,7 +68,7 @@ if(EMSCRIPTEN)
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/web")
 
     configure_file(web/index.html
-            "${CMAKE_BINARY_DIR}/web/index.html" COPYONLY)
+            "${CMAKE_BINARY_DIR}/web/index.html" @ONLY)
     configure_file(web/style.css
             "${CMAKE_BINARY_DIR}/web/style.css" COPYONLY)
     configure_file(web/app.js

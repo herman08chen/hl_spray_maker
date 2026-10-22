@@ -214,21 +214,21 @@ build cmake_object_order_depends_target_spray_maker: phony || CMakeFiles/spray_m
 
 build CMakeFiles/spray_maker.dir/web_bindings.cpp.o: CXX_COMPILER__spray_maker_unscanned_ /home/herman/CLionProjects/hl_spray_maker/web_bindings.cpp || cmake_object_order_depends_target_spray_maker
   DEP_FILE = CMakeFiles/spray_maker.dir/web_bindings.cpp.o.d
-  FLAGS = -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wshadow -Wconversion -Wsign-conversion -Wformat=2
+  FLAGS = -std=c++23 -fexceptions -Wall -Wextra -Wpedantic -Werror -Wshadow -Wconversion -Wsign-conversion -Wformat=2
   INCLUDES = -isystem /home/herman/CLionProjects/hl_spray_maker/third_party/libimagequant/include
   OBJECT_DIR = CMakeFiles/spray_maker.dir
   OBJECT_FILE_DIR = CMakeFiles/spray_maker.dir
 
 build CMakeFiles/spray_maker.dir/image.cpp.o: CXX_COMPILER__spray_maker_unscanned_ /home/herman/CLionProjects/hl_spray_maker/image.cpp || cmake_object_order_depends_target_spray_maker
   DEP_FILE = CMakeFiles/spray_maker.dir/image.cpp.o.d
-  FLAGS = -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wshadow -Wconversion -Wsign-conversion -Wformat=2
+  FLAGS = -std=c++23 -fexceptions -Wall -Wextra -Wpedantic -Werror -Wshadow -Wconversion -Wsign-conversion -Wformat=2
   INCLUDES = -isystem /home/herman/CLionProjects/hl_spray_maker/third_party/libimagequant/include
   OBJECT_DIR = CMakeFiles/spray_maker.dir
   OBJECT_FILE_DIR = CMakeFiles/spray_maker.dir
 
 build CMakeFiles/spray_maker.dir/wad.cpp.o: CXX_COMPILER__spray_maker_unscanned_ /home/herman/CLionProjects/hl_spray_maker/wad.cpp || cmake_object_order_depends_target_spray_maker
   DEP_FILE = CMakeFiles/spray_maker.dir/wad.cpp.o.d
-  FLAGS = -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wshadow -Wconversion -Wsign-conversion -Wformat=2
+  FLAGS = -std=c++23 -fexceptions -Wall -Wextra -Wpedantic -Werror -Wshadow -Wconversion -Wsign-conversion -Wformat=2
   INCLUDES = -isystem /home/herman/CLionProjects/hl_spray_maker/third_party/libimagequant/include
   OBJECT_DIR = CMakeFiles/spray_maker.dir
   OBJECT_FILE_DIR = CMakeFiles/spray_maker.dir
@@ -242,7 +242,7 @@ build CMakeFiles/spray_maker.dir/wad.cpp.o: CXX_COMPILER__spray_maker_unscanned_
 # Link the executable web/spray_maker.js
 
 build web/spray_maker.js: CXX_EXECUTABLE_LINKER__spray_maker_ CMakeFiles/spray_maker.dir/web_bindings.cpp.o CMakeFiles/spray_maker.dir/image.cpp.o CMakeFiles/spray_maker.dir/wad.cpp.o | /home/herman/CLionProjects/hl_spray_maker/third_party/libimagequant/wasm/libimagequant_sys.a
-  LINK_FLAGS = --no-entry -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createModule -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH=1 "-sEXPORTED_FUNCTIONS=['_malloc','_free','_create_wad','_free_wad','_wad_last_error','_expose_wasm_memory']" "-sEXPORTED_RUNTIME_METHODS=['UTF8ToString','wasmMemory']"
+  LINK_FLAGS = -fexceptions --no-entry -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createModule -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH=1 "-sEXPORTED_FUNCTIONS=['_malloc','_free','_create_wad','_free_wad','_wad_last_error','_expose_wasm_memory']" "-sEXPORTED_RUNTIME_METHODS=['UTF8ToString','wasmMemory']"
   LINK_LIBRARIES = /home/herman/CLionProjects/hl_spray_maker/third_party/libimagequant/wasm/libimagequant_sys.a
   OBJECT_DIR = CMakeFiles/spray_maker.dir
   POST_BUILD = :
