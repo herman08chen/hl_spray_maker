@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <print>
+#include <ostream>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -81,7 +81,8 @@ int convertDirectory(const fs::path& directory) {
             fs::create_directories(outputDirectory);
             const fs::path outputPath = outputDirectory / "tempdecal.wad";
             writeFile(outputPath, wadData);
-            std::println("Converted {} -> {}", input_path.string(), outputPath.string());
+            std::cout << "Converted " << input_path.string() << " -> "
+                      << outputPath.string() << '\n';
             ++converted;
         } catch (const std::exception& e) {
             std::cerr << "Failed to convert " << entry.path() << ": " << e.what() << '\n';
@@ -89,7 +90,8 @@ int convertDirectory(const fs::path& directory) {
         }
     }
 
-    std::println("Batch complete: {} converted, {} failed", converted, failed);
+    std::cout << "Batch complete: " << converted << " converted, "
+              << failed << " failed\n";
     return failed == 0 ? 0 : 1;
 }
 
